@@ -7,6 +7,8 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
 	github.com/alicebob/gopher-json v0.0.0-20180125190556-5a6b3ba71ee6 // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible
+	github.com/antlr/antlr4 v0.0.0-20201010232522-9e64dfc6e99f
+	github.com/bxcodec/faker/v3 v3.5.0
 	github.com/dchest/siphash v1.2.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/proto v1.9.0
