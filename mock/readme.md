@@ -451,3 +451,59 @@ $mockName必须要有对应的函数执行体名称与之对应，否则没有�
 * 定义求和表达式(custom)
 
     `sum({1},{2},{3})`
+
+# 自定义mock标签
+
+expresson=`$mockName$rule`
+
+## 准备条件
+
+* $mockName标签名称命名规则需遵循<a href="#命名规则">命名规则</a>，$rule必须要遵循rule的语法，见<a href="#rule">rule</a>
+* 定义值生产函数执行体，函数名称$funcName与$mockName需要满足 unTitle($funcName)==unTitle($mockName),注意：暂时不支持匿名函数
+* 在struct中使用标签
+* 注册值生产函数执行体
+
+## 定义animalName的标签
+
+* 定义值生产函数执行体
+
+```golang
+func AnimalName(ctx *render.MockContext)interface{}{
+	r:=rand.New(rand.NewSource(time.Now().UnixNano()))
+	animals:=[]string{"熊猫","大象","老虎","程序猿"}
+	index:=r.Intn(4)
+	return animals[index]
+}
+```
+
+* 定义struct并使用标签
+
+```
+type (
+	Animal struct {
+		Name string `mock:"animalName"`
+	}
+)
+
+```
+
+* 注册AnimalName函数，并生成数据
+
+```
+func main() {
+	data := &Animal{}
+	m:=mock.With(data, expand.AnimalName)
+	err:=m.Mock()
+	if err!=nil{
+		log.Fatal(err)
+	}
+	bts,_:=json.Marshal(data)
+	fmt.Println(string(bts))
+}
+```
+
+## 运行结果
+
+```
+{"Name":"程序猿"}
+```
