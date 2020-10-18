@@ -1,7 +1,7 @@
 # MockTag
 MockTag是指在struct中定义好mock表达式，mocker可以根据表达式规则生成指定值
 
-# 流程图
+# 结构图
 ![架构图](flow.svg)
 
 # zeroValue vs mock
