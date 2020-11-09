@@ -29,10 +29,9 @@ service {{.name}}-api {
 
 func NewService(c *cli.Context) error {
 	args := c.Args()
-	dirName := args.First()
-
-	if len(dirName) == 0 {
-		dirName = "greet"
+	dirName := "greet"
+	if len(args) > 0 {
+		dirName = args.First()
 	}
 
 	abs, err := filepath.Abs(dirName)
