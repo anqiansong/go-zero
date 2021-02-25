@@ -19,6 +19,7 @@ import (
 	"github.com/tal-tech/go-zero/tools/goctl/configgen"
 	"github.com/tal-tech/go-zero/tools/goctl/docker"
 	"github.com/tal-tech/go-zero/tools/goctl/kube"
+	mongogen "github.com/tal-tech/go-zero/tools/goctl/model/mongo/generate"
 	model "github.com/tal-tech/go-zero/tools/goctl/model/sql/command"
 	"github.com/tal-tech/go-zero/tools/goctl/plugin"
 	rpc "github.com/tal-tech/go-zero/tools/goctl/rpc/cli"
@@ -446,6 +447,11 @@ var (
 							Action: model.MyDataSource,
 						},
 					},
+				},
+				{
+					Name:   "mongo",
+					Usage:  `generate mongo model`,
+					Action: mongogen.Do,
 				},
 			},
 		},
