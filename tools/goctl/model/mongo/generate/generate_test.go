@@ -9,7 +9,6 @@ import (
 func TestDo(t *testing.T) {
 	err := Do(&Context{
 		Type:   "User",
-		Time:   false,
 		Cache:  false,
 		Output: t.TempDir(),
 	})
