@@ -3,7 +3,7 @@ package generate
 import (
 	"fmt"
 
-	"github.com/tal-tech/go-zero/tools/goctl/model/sql/template"
+	"github.com/tal-tech/go-zero/tools/goctl/model/mongo/template"
 	"github.com/tal-tech/go-zero/tools/goctl/util"
 	"github.com/urfave/cli"
 )
@@ -15,7 +15,7 @@ const (
 )
 
 var templates = map[string]string{
-	modelTemplateFile: template.Model,
+	modelTemplateFile: template.Text,
 	errTemplateFile:   template.Error,
 }
 

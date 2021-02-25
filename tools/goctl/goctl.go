@@ -19,7 +19,7 @@ import (
 	"github.com/tal-tech/go-zero/tools/goctl/configgen"
 	"github.com/tal-tech/go-zero/tools/goctl/docker"
 	"github.com/tal-tech/go-zero/tools/goctl/kube"
-	mongogen "github.com/tal-tech/go-zero/tools/goctl/model/mongo/generate"
+	mongogen "github.com/tal-tech/go-zero/tools/goctl/model/mongo"
 	model "github.com/tal-tech/go-zero/tools/goctl/model/sql/command"
 	"github.com/tal-tech/go-zero/tools/goctl/plugin"
 	rpc "github.com/tal-tech/go-zero/tools/goctl/rpc/cli"
@@ -449,9 +449,23 @@ var (
 					},
 				},
 				{
-					Name:   "mongo",
-					Usage:  `generate mongo model`,
-					Action: mongogen.Do,
+					Name:  "mongo",
+					Usage: `generate mongo model`,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "type, t",
+							Usage: "specified model type name",
+						},
+						cli.BoolFlag{
+							Name:  "cache, c",
+							Usage: "generate code with cache [optional]",
+						},
+						cli.StringFlag{
+							Name:  "dir, d",
+							Usage: "the target dir",
+						},
+					},
+					Action: mongogen.Command,
 				},
 			},
 		},

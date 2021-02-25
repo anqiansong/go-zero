@@ -12,9 +12,8 @@ import (
 // Command provides the entry for goctl
 func Command(ctx *cli.Context) error {
 	tp := strings.TrimSpace(ctx.String("type"))
-	time := ctx.Bool("time")
 	c := ctx.Bool("cache")
-	o := strings.TrimSpace(ctx.String("output"))
+	o := strings.TrimSpace(ctx.String("dir"))
 	if len(tp) == 0 {
 		return errors.New("missing type")
 	}
@@ -26,7 +25,6 @@ func Command(ctx *cli.Context) error {
 
 	return generate.Do(&generate.Context{
 		Type:   tp,
-		Time:   time,
 		Cache:  c,
 		Output: a,
 	})
