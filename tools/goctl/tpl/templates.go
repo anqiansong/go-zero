@@ -8,6 +8,7 @@ import (
 	"github.com/tal-tech/go-zero/tools/goctl/api/gogen"
 	"github.com/tal-tech/go-zero/tools/goctl/docker"
 	"github.com/tal-tech/go-zero/tools/goctl/kube"
+	mongogen "github.com/tal-tech/go-zero/tools/goctl/model/mongo/generate"
 	modelgen "github.com/tal-tech/go-zero/tools/goctl/model/sql/gen"
 	rpcgen "github.com/tal-tech/go-zero/tools/goctl/rpc/generator"
 	"github.com/tal-tech/go-zero/tools/goctl/util"
@@ -32,6 +33,9 @@ func GenTemplates(ctx *cli.Context) error {
 		},
 		func() error {
 			return kube.GenTemplates(ctx)
+		},
+		func() error {
+			return mongogen.Templates(ctx)
 		},
 	); err != nil {
 		return err
@@ -58,6 +62,9 @@ func CleanTemplates(_ *cli.Context) error {
 		},
 		func() error {
 			return rpcgen.Clean()
+		},
+		func() error {
+			return mongogen.Clean()
 		},
 	)
 	if err != nil {
@@ -86,6 +93,8 @@ func UpdateTemplates(ctx *cli.Context) (err error) {
 		return rpcgen.Update()
 	case modelgen.Category():
 		return modelgen.Update()
+	case mongogen.Category():
+		return mongogen.Update()
 	default:
 		err = fmt.Errorf("unexpected category: %s", category)
 		return
@@ -111,6 +120,8 @@ func RevertTemplates(ctx *cli.Context) (err error) {
 		return rpcgen.RevertTemplate(filename)
 	case modelgen.Category():
 		return modelgen.RevertTemplate(filename)
+	case mongogen.Category():
+		return mongogen.RevertTemplate(filename)
 	default:
 		err = fmt.Errorf("unexpected category: %s", category)
 		return
