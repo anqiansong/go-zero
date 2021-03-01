@@ -11,65 +11,65 @@ type DataModel struct {
 }
 
 type Table struct {
-	TableSchema    string `json:"TABLE_SCHEMA"`
-	TableName      string `json:"TABLE_NAME"`
-	TableType      string `json:"TABLE_TYPE"`
-	Engine         string `json:"ENGINE"`
-	Version        string `json:"VERSION"`
-	RowFormat      string `json:"ROW_FORMAT"`
-	TableRows      int    `json:"TABLE_ROWS"`
-	AvgRowLength   int64  `json:"AVG_ROW_LENGTH"`
-	DataLength     int64  `json:"DATA_LENGTH"`
-	MaxDataLength  int64  `json:"MAX_DATA_LENGTH"`
-	IndexLength    int64  `json:"INDEX_LENGTH"`
-	DataFree       int64  `json:"DATA_FREE"`
-	AutoIncrement  int    `json:"AUTO_INCREMENT"`
-	TableCollation string `json:"TABLE_COLLATION"`
-	CheckSum       int64  `json:"CHECKSUM"`
-	CreateOptions  string `json:"CREATE_OPTIONS"`
-	TableComment   string `json:"TABLE_COMMENT"`
+	TableSchema    string `db:"TABLE_SCHEMA"`
+	TableName      string `db:"TABLE_NAME"`
+	TableType      string `db:"TABLE_TYPE"`
+	Engine         string `db:"ENGINE"`
+	Version        string `db:"VERSION"`
+	RowFormat      string `db:"ROW_FORMAT"`
+	TableRows      int    `db:"TABLE_ROWS"`
+	AvgRowLength   int64  `db:"AVG_ROW_LENGTH"`
+	DataLength     int64  `db:"DATA_LENGTH"`
+	MaxDataLength  int64  `db:"MAX_DATA_LENGTH"`
+	IndexLength    int64  `db:"INDEX_LENGTH"`
+	DataFree       int64  `db:"DATA_FREE"`
+	AutoIncrement  int    `db:"AUTO_INCREMENT"`
+	TableCollation string `db:"TABLE_COLLATION"`
+	CheckSum       int64  `db:"CHECKSUM"`
+	CreateOptions  string `db:"CREATE_OPTIONS"`
+	TableComment   string `db:"TABLE_COMMENT"`
 }
 
 type Column struct {
-	TableSchema            string `json:"TABLE_SCHEMA"`
-	TableName              string `json:"TABLE_NAME"`
-	ColumnName             string `json:"COLUMN_NAME"`
-	OrdinalPosition        int    `json:"ORDINAL_POSITION"`
-	ColumnDefault          string `json:"COLUMN_DEFAULT"`
-	IsNullable             string `json:"IS_NULLABLE"`
-	DataType               string `json:"DATA_TYPE"`
-	CharacterMaximumLength int    `json:"CHARACTER_MAXIMUM_LENGTH"`
-	CharacterOctetLength   int    `json:"CHARACTER_OCTET_LENGTH"`
-	NumericPrecision       int    `json:"NUMERIC_PRECISION"`
-	NumericScale           int    `json:"NUMERIC_SCALE"`
-	DateTimePrecision      int    `json:"DATETIME_PRECISION"`
-	CharacterSetName       string `json:"CHARACTER_SET_NAME"`
-	CollationName          string `json:"COLLATION_NAME"`
-	ColumnType             string `json:"COLUMN_TYPE"`
-	ColumnKey              string `json:"COLUMN_KEY"`
-	Extra                  string `json:"EXTRA"`
-	Privileges             string `json:"PRIVILEGES"`
-	ColumnComment          string `json:"COLUMN_COMMENT"`
-	GenerationExpression   string `json:"GENERATION_EXPRESSION"`
+	TableSchema            string `db:"TABLE_SCHEMA"`
+	TableName              string `db:"TABLE_NAME"`
+	ColumnName             string `db:"COLUMN_NAME"`
+	OrdinalPosition        int    `db:"ORDINAL_POSITION"`
+	ColumnDefault          string `db:"COLUMN_DEFAULT"`
+	IsNullable             string `db:"IS_NULLABLE"`
+	DataType               string `db:"DATA_TYPE"`
+	CharacterMaximumLength int    `db:"CHARACTER_MAXIMUM_LENGTH"`
+	CharacterOctetLength   int    `db:"CHARACTER_OCTET_LENGTH"`
+	NumericPrecision       int    `db:"NUMERIC_PRECISION"`
+	NumericScale           int    `db:"NUMERIC_SCALE"`
+	DateTimePrecision      int    `db:"DATETIME_PRECISION"`
+	CharacterSetName       string `db:"CHARACTER_SET_NAME"`
+	CollationName          string `db:"COLLATION_NAME"`
+	ColumnType             string `db:"COLUMN_TYPE"`
+	ColumnKey              string `db:"COLUMN_KEY"`
+	Extra                  string `db:"EXTRA"`
+	Privileges             string `db:"PRIVILEGES"`
+	ColumnComment          string `db:"COLUMN_COMMENT"`
+	GenerationExpression   string `db:"GENERATION_EXPRESSION"`
 }
 
 type Index struct {
-	TableSchema  string `json:"TABLE_SCHEMA"`
-	TableName    string `json:"TABLE_NAME"`
-	NonUnique    int    `json:"NON_UNIQUE"`
-	IndexSchema  string `json:"INDEX_SCHEMA"`
-	IndexName    string `json:"INDEX_NAME"`
-	SeqInIndex   int    `json:"SEQ_IN_INDEX"`
-	ColumnName   string `json:"COLUMN_NAME"`
-	Collation    string `json:"COLLATION"`
-	Cardinlity   int64  `json:"CARDINLITY"`
-	SubPart      int64  `json:"SUB_PART"`
-	Nullable     string `json:"NULLABLE"`
-	IndexType    string `json:"INDEX_TYPE"`
-	Comment      string `json:"COMMENT"`
-	IndexComment string `json:"INDEX_COMMENT"`
-	IsVisible    string `json:"IS_VISIBLE"`
-	Expression   string `json:"EXPRESSION"`
+	TableSchema  string `db:"TABLE_SCHEMA"`
+	TableName    string `db:"TABLE_NAME"`
+	NonUnique    int    `db:"NON_UNIQUE"`
+	IndexSchema  string `db:"INDEX_SCHEMA"`
+	IndexName    string `db:"INDEX_NAME"`
+	SeqInIndex   int    `db:"SEQ_IN_INDEX"`
+	ColumnName   string `db:"COLUMN_NAME"`
+	Collation    string `db:"COLLATION"`
+	Cardinlity   int64  `db:"CARDINLITY"`
+	SubPart      int64  `db:"SUB_PART"`
+	Nullable     string `db:"NULLABLE"`
+	IndexType    string `db:"INDEX_TYPE"`
+	Comment      string `db:"COMMENT"`
+	IndexComment string `db:"INDEX_COMMENT"`
+	IsVisible    string `db:"IS_VISIBLE"`
+	Expression   string `db:"EXPRESSION"`
 }
 
 func NewDataModel(conn sqlx.SqlConn) *DataModel {
@@ -81,21 +81,21 @@ func (m *DataModel) Tables(db string) ([]*Table, error) {
 		SELECT
 			TABLE_SCHEMA,
 			TABLE_NAME,
-			IFNULL(TABLE_TYPE,""),
-			IFNULL(ENGINE,""),
-			IFNULL(VERSION,""),
-			IFNULL(ROW_FORMAT,""),
-			IFNULL(TABLE_ROWS,0),
-			IFNULL(AVG_ROW_LENGTH,0),
-			IFNULL(DATA_LENGTH,0),
-			IFNULL(MAX_DATA_LENGTH,0),
-			IFNULL(INDEX_LENGTH,0),
-			IFNULL(DATA_FREE,0),
-			IFNULL(AUTO_INCREMENT,0),
-			IFNULL(TABLE_COLLATION,""),
-			IFNULL(CHECKSUM,0),
-			IFNULL(CREATE_OPTIONS,""),
-			IFNULL(TABLE_COMMENT,"")
+			IFNULL(TABLE_TYPE,"") AS TABLE_TYPE,
+			IFNULL(ENGINE,"") AS ENGINE,
+			IFNULL(VERSION,"") AS VERSION,
+			IFNULL(ROW_FORMAT,"") AS ROW_FORMAT,
+			IFNULL(TABLE_ROWS,0) AS TABLE_ROWS,
+			IFNULL(AVG_ROW_LENGTH,0) AS AVG_ROW_LENGTH,
+			IFNULL(DATA_LENGTH,0) AS DATA_LENGTH,
+			IFNULL(MAX_DATA_LENGTH,0) AS MAX_DATA_LENGTH,
+			IFNULL(INDEX_LENGTH,0) AS INDEX_LENGTH,
+			IFNULL(DATA_FREE,0) AS DATA_FREE,
+			IFNULL(AUTO_INCREMENT,0) AS AUTO_INCREMENT,
+			IFNULL(TABLE_COLLATION,"") AS TABLE_COLLATION,
+			IFNULL(CHECKSUM,0) AS CHECKSUM,
+			IFNULL(CREATE_OPTIONS,"") AS CREATE_OPTIONS,
+			IFNULL(TABLE_COMMENT,"") AS TABLE_COMMENT
 		FROM
 			TABLES 
 		WHERE
@@ -116,23 +116,23 @@ func (m *DataModel) Columns(db, table string) ([]*Column, error) {
 			TABLE_SCHEMA,
 			TABLE_NAME,
 			COLUMN_NAME,
-			IFNULL(ORDINAL_POSITION,0),
-			IFNULL(COLUMN_DEFAULT,""),
-			IFNULL(IS_NULLABLE,""),
-			IFNULL(DATA_TYPE,""),
-			IFNULL(CHARACTER_MAXIMUM_LENGTH,0),
-			IFNULL(CHARACTER_OCTET_LENGTH,0),
-			IFNULL(NUMERIC_PRECISION,0),
-			IFNULL(NUMERIC_SCALE,0),
-			IFNULL(DATETIME_PRECISION,0),
-			IFNULL(CHARACTER_SET_NAME,""),
-			IFNULL(COLLATION_NAME,""),
-			IFNULL(COLUMN_TYPE,""),
-			IFNULL(COLUMN_KEY,""),
-			IFNULL(EXTRA,""),
-			IFNULL(PRIVILEGES,""),
-			IFNULL(COLUMN_COMMENT,""),
-			IFNULL(GENERATION_EXPRESSION,"")
+			IFNULL(ORDINAL_POSITION,0) AS ORDINAL_POSITION,
+			IFNULL(COLUMN_DEFAULT,"") AS COLUMN_DEFAULT,
+			IFNULL(IS_NULLABLE,"") AS IS_NULLABLE,
+			IFNULL(DATA_TYPE,"") AS DATA_TYPE,
+			IFNULL(CHARACTER_MAXIMUM_LENGTH,0) AS CHARACTER_MAXIMUM_LENGTH,
+			IFNULL(CHARACTER_OCTET_LENGTH,0) AS CHARACTER_OCTET_LENGTH,
+			IFNULL(NUMERIC_PRECISION,0) AS NUMERIC_PRECISION,
+			IFNULL(NUMERIC_SCALE,0) AS NUMERIC_SCALE,
+			IFNULL(DATETIME_PRECISION,0) AS DATETIME_PRECISION,
+			IFNULL(CHARACTER_SET_NAME,"") AS CHARACTER_SET_NAME,
+			IFNULL(COLLATION_NAME,"") AS COLLATION_NAME,
+			IFNULL(COLUMN_TYPE,"") AS COLUMN_TYPE,
+			IFNULL(COLUMN_KEY,"") AS COLUMN_KEY,
+			IFNULL(EXTRA,"") AS EXTRA,
+			IFNULL(PRIVILEGES,"") AS PRIVILEGES,
+			IFNULL(COLUMN_COMMENT,"") AS COLUMN_COMMENT,
+			IFNULL(GENERATION_EXPRESSION,"") AS GENERATION_EXPRESSION
 		FROM
 			COLUMNS 
 		WHERE
@@ -141,7 +141,7 @@ func (m *DataModel) Columns(db, table string) ([]*Column, error) {
 			TABLE_NAME = ?
 	`
 	var cs []*Column
-	err := m.conn.QueryRows(&cs, query, db, table)
+	err := m.conn.QueryRowsPartial(&cs, query, db, table)
 	if err != nil {
 		return nil, err
 	}
@@ -159,15 +159,15 @@ func (m *DataModel) Primary(db, table string) ([]*Index, error) {
 			INDEX_NAME,
 			SEQ_IN_INDEX,
 			COLUMN_NAME,
-			IFNULL(COLLATION,""),
-			IFNULL(CARDINLITY,0),
-			IFNULL(SUB_PART,0),
-			IFNULL(NULLABLE,""),
-			IFNULL(INDEX_TYPE,""),
-			IFNULL(COMMENT,""),
-			IFNULL(INDEX_COMMENT,""),
-			IFNULL(IS_VISIBLE,""),
-			IFNULL(EXPRESSION ,"")
+			IFNULL(COLLATION,"") AS COLLATION,
+			IFNULL(CARDINALITY,0) AS CARDINALITY,
+			IFNULL(SUB_PART,0) AS SUB_PART,
+			IFNULL(NULLABLE,"") AS NULLABLE,
+			IFNULL(INDEX_TYPE,"") AS INDEX_TYPE,
+			IFNULL(COMMENT,"") AS COMMENT,
+			IFNULL(INDEX_COMMENT,"") AS INDEX_COMMENT,
+			IFNULL(IS_VISIBLE,"") AS IS_VISIBLE,
+			IFNULL(EXPRESSION ,"") AS EXPRESSION
 		FROM
 			STATISTICS 
 		WHERE
@@ -197,15 +197,15 @@ func (m *DataModel) Unique(db, table string) ([][]*Index, error) {
 			INDEX_NAME,
 			SEQ_IN_INDEX,
 			COLUMN_NAME,
-			IFNULL(COLLATION,""),
-			IFNULL(CARDINLITY,0),
-			IFNULL(SUB_PART,0),
-			IFNULL(NULLABLE,""),
-			IFNULL(INDEX_TYPE,""),
-			IFNULL(COMMENT,""),
-			IFNULL(INDEX_COMMENT,""),
-			IFNULL(IS_VISIBLE,""),
-			IFNULL(EXPRESSION ,"")
+			IFNULL(COLLATION,"") AS COLLATION,
+			IFNULL(CARDINALITY,0) AS CARDINALITY,
+			IFNULL(SUB_PART,0) AS SUB_PART,
+			IFNULL(NULLABLE,"") AS NULLABLE,
+			IFNULL(INDEX_TYPE,"") AS INDEX_TYPE,
+			IFNULL(COMMENT,"") AS COMMENT,
+			IFNULL(INDEX_COMMENT,"") AS INDEX_COMMENT,
+			IFNULL(IS_VISIBLE,"") AS IS_VISIBLE,
+			IFNULL(EXPRESSION ,"") AS EXPRESSION
 		FROM
 			STATISTICS 
 		WHERE

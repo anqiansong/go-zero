@@ -270,7 +270,7 @@ func (c *Column) EnumValues() []string {
 	return strings.Split(enums, ",")
 }
 
-type Columns = []*Column
+type Columns []*Column
 
 func (c Columns) Column(name string) *Column {
 	for _, i := range c {
@@ -312,6 +312,7 @@ type Data struct {
 	Primary Indexes
 	Unique  []Indexes
 	Convert func(s string) stringx.String
+	Join    func(list []string, sep string) stringx.String
 }
 
 // createData initializes template data to execute template
@@ -350,13 +351,17 @@ func createData(m *model.DataModel, db, table string) (*Data, error) {
 		Convert: func(s string) stringx.String {
 			return stringx.From(s)
 		},
+		Join: func(list []string, sep string) stringx.String {
+			v := strings.Join(list, sep)
+			return stringx.From(v)
+		},
 	}, nil
 }
 
 func covertColumn(list []*model.Column) ([]*Column, error) {
 	var columns []*Column
 	for _, c := range list {
-		tp, err := convertDataType(c.TableSchema, c.TableName)
+		tp, err := convertDataType(c.DataType, c.TableName)
 		if err != nil {
 			return nil, err
 		}
