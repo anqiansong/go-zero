@@ -19,7 +19,8 @@ import (
 	"github.com/tal-tech/go-zero/tools/goctl/configgen"
 	"github.com/tal-tech/go-zero/tools/goctl/docker"
 	"github.com/tal-tech/go-zero/tools/goctl/kube"
-	mongogen "github.com/tal-tech/go-zero/tools/goctl/model/mongo"
+	"github.com/tal-tech/go-zero/tools/goctl/model/mongo"
+	"github.com/tal-tech/go-zero/tools/goctl/model/mysql"
 	model "github.com/tal-tech/go-zero/tools/goctl/model/sql/command"
 	"github.com/tal-tech/go-zero/tools/goctl/plugin"
 	rpc "github.com/tal-tech/go-zero/tools/goctl/rpc/cli"
@@ -387,6 +388,25 @@ var (
 				{
 					Name:  "mysql",
 					Usage: `generate mysql model`,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "dsn",
+							Usage: "the data source name",
+						},
+						cli.StringFlag{
+							Name:  "pattern, p",
+							Usage: "the table globbing patterns to match table(s)",
+						},
+						cli.StringFlag{
+							Name:  "template, t",
+							Usage: "the filename of template in GOCTLHOME ,supported globbing patterns",
+						},
+						cli.StringFlag{
+							Name:  "dir, d",
+							Usage: "the output directory",
+						},
+					},
+					Action: mysql.Action,
 					Subcommands: []cli.Command{
 						{
 							Name:  "ddl",
@@ -465,7 +485,7 @@ var (
 							Usage: "the target dir",
 						},
 					},
-					Action: mongogen.Command,
+					Action: mongo.Action,
 				},
 			},
 		},

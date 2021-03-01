@@ -3,20 +3,20 @@ package generate
 import (
 	"fmt"
 
-	"github.com/tal-tech/go-zero/tools/goctl/model/mongo/template"
+	"github.com/tal-tech/go-zero/tools/goctl/model/mysql/template"
 	"github.com/tal-tech/go-zero/tools/goctl/util"
 	"github.com/urfave/cli"
 )
 
 const (
-	category          = "mongo"
-	modelTemplateFile = "model.tpl"
-	errTemplateFile   = "err.tpl"
+	category            = "mysql"
+	defaultTemplateFile = "mysql-default.tpl"
+	errTemplateFile     = "error.tpl"
 )
 
 var templates = map[string]string{
-	modelTemplateFile: template.Text,
-	errTemplateFile:   template.Error,
+	defaultTemplateFile: template.DefaultTpl,
+	errTemplateFile:     template.ErrorTpl,
 }
 
 func Category() string {

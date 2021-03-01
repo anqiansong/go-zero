@@ -10,7 +10,7 @@ import (
 )
 
 // Command provides the entry for goctl
-func Command(ctx *cli.Context) error {
+func Action(ctx *cli.Context) error {
 	tp := strings.TrimSpace(ctx.String("type"))
 	c := ctx.Bool("cache")
 	o := strings.TrimSpace(ctx.String("dir"))
