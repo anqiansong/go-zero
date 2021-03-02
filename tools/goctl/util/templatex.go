@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"fmt"
 	goformat "go/format"
 	"io/ioutil"
 	"text/template"
@@ -68,6 +69,8 @@ func (t *DefaultTemplate) Execute(data interface{}) (*bytes.Buffer, error) {
 
 	formatOutput, err := goformat.Source(buf.Bytes())
 	if err != nil {
+		fmt.Println("---fmt error---")
+		fmt.Println(buf.String())
 		return nil, err
 	}
 

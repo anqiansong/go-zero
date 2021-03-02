@@ -2,7 +2,9 @@ package model
 
 import (
 	"sort"
+	"strings"
 
+	"github.com/tal-tech/go-zero/core/collection"
 	"github.com/tal-tech/go-zero/core/stores/sqlx"
 )
 
@@ -213,7 +215,9 @@ func (m *DataModel) Unique(db, table string) ([][]*Index, error) {
 		AND
 			TABLE_NAME = ?
 		AND 
-			NON_UNIQUE = 1
+			NON_UNIQUE = 0
+		AND 
+			INDEX_NAME != 'PRIMARY'
 	`
 
 	var is []*Index
@@ -227,12 +231,31 @@ func (m *DataModel) Unique(db, table string) ([][]*Index, error) {
 		d[i.IndexName] = append(d[i.IndexName], i)
 	}
 
+	indexSet := collection.NewSet()
 	var ret [][]*Index
 	for _, list := range d {
 		sort.Slice(list, func(i, j int) bool {
 			return list[i].SeqInIndex < list[j].SeqInIndex
 		})
-		ret = append(ret, list)
+		var vl []string
+		for _, i := range list {
+			vl = append(vl, i.ColumnName)
+		}
+
+		one := list[0]
+		var key string
+		if one.NonUnique == 0 || one.IndexName == "PRIMARY" {
+			key = strings.Join(vl, "-")
+		}
+
+		if len(key) > 0 {
+			if !indexSet.Contains(key) {
+				ret = append(ret, list)
+			}
+			indexSet.AddStr(key)
+		} else {
+			ret = append(ret, list)
+		}
 	}
 
 	return ret, nil
