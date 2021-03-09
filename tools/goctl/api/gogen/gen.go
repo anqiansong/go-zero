@@ -42,8 +42,13 @@ func GoCommand(c *cli.Context) error {
 }
 
 // DoGenProject gen go project files with api file
-func DoGenProject(apiFile, dir, style string) error {
-	api, err := parser.Parse(apiFile)
+func DoGenProject(apiParam, dir, style string) error {
+	apiPath, importMap, err := util.ParseApiParam(apiParam)
+	if err != nil {
+		return err
+	}
+
+	api, err := parser.Parse(apiPath)
 	if err != nil {
 		return err
 	}
@@ -58,17 +63,17 @@ func DoGenProject(apiFile, dir, style string) error {
 	logx.Must(genConfig(dir, cfg, api))
 	logx.Must(genMain(dir, cfg, api))
 	logx.Must(genServiceContext(dir, cfg, api))
-	logx.Must(genTypes(dir, cfg, api))
+	logx.Must(genTypes(dir, importMap, cfg, api))
 	logx.Must(genRoutes(dir, cfg, api))
 	logx.Must(genHandlers(dir, cfg, api))
 	logx.Must(genLogic(dir, cfg, api))
 	logx.Must(genMiddleware(dir, cfg, api))
 
-	if err := backupAndSweep(apiFile); err != nil {
+	if err := backupAndSweep(apiPath); err != nil {
 		return err
 	}
 
-	if err := apiformat.ApiFormatByPath(apiFile); err != nil {
+	if err := apiformat.ApiFormatByPath(apiPath); err != nil {
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package gogen
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -20,6 +21,7 @@ const (
 package types{{if .containsTime}}
 import (
 	"time"
+	{{.import}}
 ){{end}}
 {{.types}}
 `
@@ -43,7 +45,7 @@ func BuildTypes(types []spec.Type) (string, error) {
 	return builder.String(), nil
 }
 
-func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
+func genTypes(dir string, importMap map[string]string, cfg *config.Config, api *spec.ApiSpec) error {
 	val, err := BuildTypes(api.Types)
 	if err != nil {
 		return err
@@ -58,6 +60,18 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
 
+	var imports []string
+	for _, item := range api.Imports {
+		if len(item.AsPackage) > 0 {
+			refer := importMap[item.Value]
+			if len(refer) == 0 {
+				return errors.New("should specific the import go path of from command line." + item.Value)
+			}
+
+			imports = append(imports, fmt.Sprintf(`%s "%s"`, item.AsPackage, refer))
+		}
+	}
+
 	return genFile(fileGenConfig{
 		dir:             dir,
 		subdir:          typesDir,
@@ -69,6 +83,7 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 		data: map[string]interface{}{
 			"types":        val,
 			"containsTime": false,
+			"import":       strings.Join(imports, "\n"),
 		},
 	})
 }
