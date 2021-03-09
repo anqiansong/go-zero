@@ -35,9 +35,9 @@ func Parse(filename string) (*spec.ApiSpec, error) {
 }
 
 // ParseContent parses the api content
-func ParseContent(content string) (*spec.ApiSpec, error) {
+func ParseContent(content, workDir string) (*spec.ApiSpec, error) {
 	astParser := ast.NewParser()
-	ast, err := astParser.ParseContent(content)
+	ast, err := astParser.ParseContent(content, workDir)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (p parser) fillImport() {
 	if len(p.ast.Import) > 0 {
 		for _, item := range p.ast.Import {
 			p.spec.Imports = append(p.spec.Imports, spec.Import{
-				Value:     item.Value.Text(),
+				Value:     strings.TrimSuffix(strings.TrimPrefix(item.Value.Text(), `"`), `"`),
 				AsPackage: item.Package.Text(),
 			})
 		}
