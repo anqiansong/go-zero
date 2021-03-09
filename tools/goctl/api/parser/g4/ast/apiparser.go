@@ -27,7 +27,7 @@ type (
 	ImportInfo struct {
 		Path      string
 		Package   string
-		Structure map[string]PlaceHolder
+		Structure map[string]TypeExpr
 	}
 )
 
@@ -122,17 +122,22 @@ func (p *Parser) parse(filename, content, workDir string) (*Api, error) {
 			return nil, err
 		}
 
-		err = p.valid(root, nestedApi)
+		var pkg string
+		if imp.Package != nil {
+			pkg = imp.Package.Text()
+			importInfo[pkg] = &ImportInfo{
+				Path:      path,
+				Package:   pkg,
+				Structure: nestedApi.typeM,
+			}
+		}
+
+		err = p.valid(root, nestedApi, pkg)
 		if err != nil {
 			return nil, err
 		}
 
-		if imp.Package != nil {
-			importInfo[imp.Package.Text()] = &ImportInfo{
-				Path:      path,
-				Package:   imp.Package.Text(),
-				Structure: nestedApi.typeM,
-			}
+		if len(pkg) > 0 {
 			continue
 		}
 
@@ -145,6 +150,7 @@ func (p *Parser) parse(filename, content, workDir string) (*Api, error) {
 	}
 
 	allApi := p.memberFill(apiAstList)
+	allApi.ImportInfo = importInfo
 	return allApi, nil
 }
 
@@ -184,7 +190,7 @@ func (p *Parser) invoke(linePrefix, content string) (v *Api, err error) {
 	return
 }
 
-func (p *Parser) valid(mainApi *Api, nestedApi *Api) error {
+func (p *Parser) valid(mainApi *Api, nestedApi *Api, pkg string) error {
 	err := p.nestedApiCheck(mainApi, nestedApi)
 	if err != nil {
 		return err
@@ -235,7 +241,12 @@ func (p *Parser) valid(mainApi *Api, nestedApi *Api) error {
 
 	// duplicate type check
 	for _, each := range nestedApi.Type {
-		if _, ok := mainTypeMap[each.NameExpr().Text()]; ok {
+		k := each.NameExpr().Text()
+		if len(pkg) > 0 {
+			k = pkg + "." + k
+		}
+
+		if _, ok := mainTypeMap[k]; ok {
 			return fmt.Errorf("%s line %d:%d duplicate type declaration '%s'",
 				nestedApi.LinePrefix, each.NameExpr().Line(), each.NameExpr().Column(), each.NameExpr().Text())
 		}

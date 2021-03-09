@@ -38,7 +38,6 @@ func GoCommand(c *cli.Context) error {
 		return errors.New("missing -dir")
 	}
 
-	fmt.Println(apiFile)
 	return DoGenProject(apiFile, dir, namingStyle)
 }
 

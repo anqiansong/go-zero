@@ -24,14 +24,15 @@ func Parse(filename string) (*spec.ApiSpec, error) {
 		return nil, err
 	}
 
-	spec := new(spec.ApiSpec)
-	p := parser{ast: ast, spec: spec}
+	sp := new(spec.ApiSpec)
+	sp.ImportKV = map[string]spec.Import{}
+	p := parser{ast: ast, spec: sp}
 	err = p.convert2Spec()
 	if err != nil {
 		return nil, err
 	}
 
-	return spec, nil
+	return sp, nil
 }
 
 // ParseContent parses the api content
@@ -42,14 +43,15 @@ func ParseContent(content, workDir string) (*spec.ApiSpec, error) {
 		return nil, err
 	}
 
-	spec := new(spec.ApiSpec)
-	p := parser{ast: ast, spec: spec}
+	sp := new(spec.ApiSpec)
+	sp.ImportKV = map[string]spec.Import{}
+	p := parser{ast: ast, spec: sp}
 	err = p.convert2Spec()
 	if err != nil {
 		return nil, err
 	}
 
-	return spec, nil
+	return sp, nil
 }
 
 func (p parser) convert2Spec() error {
@@ -84,15 +86,45 @@ func (p parser) fillSyntax() {
 func (p parser) fillImport() {
 	if len(p.ast.Import) > 0 {
 		for _, item := range p.ast.Import {
+			var pkg string
+			if item.Package != nil {
+				pkg = item.Package.Text()
+			}
 			p.spec.Imports = append(p.spec.Imports, spec.Import{
 				Value:     strings.TrimSuffix(strings.TrimPrefix(item.Value.Text(), `"`), `"`),
-				AsPackage: item.Package.Text(),
+				AsPackage: pkg,
 			})
 		}
 	}
 }
 
 func (p parser) fillTypes() error {
+	for k, item := range p.ast.ImportInfo {
+		types := make([]spec.Type, 0)
+		for _, e := range item.Structure {
+			switch v := (e).(type) {
+			case *ast.TypeStruct:
+				var members []spec.Member
+				for _, item := range v.Fields {
+					members = append(members, p.fieldToMember(item))
+				}
+				types = append(types, spec.DefineStruct{
+					RawName:  v.Name.Text(),
+					TypeName: v.Name.Text(),
+					Members:  members,
+					Docs:     p.stringExprs(v.Doc()),
+				})
+			default:
+				return fmt.Errorf("unknown type %+v", v)
+			}
+		}
+		p.spec.ImportKV[k] = spec.Import{
+			Value:     item.Path,
+			AsPackage: item.Package,
+			Types:     types,
+		}
+	}
+
 	for _, item := range p.ast.Type {
 		switch v := (item).(type) {
 		case *ast.TypeStruct:
@@ -119,12 +151,15 @@ func (p parser) fillTypes() error {
 			for _, member := range v.Members {
 				switch v := member.Type.(type) {
 				case spec.DefineStruct:
-					tp, err := p.findDefinedType(v.RawName)
-					if err != nil {
-						return err
-					}
+					// do not check if it's a import struct type,because it's checked while parsing
+					if len(v.Package) == 0 {
+						tp, err := p.findDefinedType(v.RawName)
+						if err != nil {
+							return err
+						}
 
-					member.Type = *tp
+						member.Type = *tp
+					}
 				}
 				members = append(members, member)
 			}

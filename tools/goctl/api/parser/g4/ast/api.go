@@ -16,19 +16,20 @@ type Api struct {
 	importM        map[string]PlaceHolder
 	Info           *InfoExpr
 	Type           []TypeExpr
-	typeM          map[string]PlaceHolder
+	typeM          map[string]TypeExpr
 	Service        []*Service
 	serviceM       map[string]PlaceHolder
 	handlerM       map[string]PlaceHolder
 	routeM         map[string]PlaceHolder
 	importPackageM map[string]string
+	ImportInfo     map[string]*ImportInfo
 }
 
 // VisitApi implements from api.BaseApiParserVisitor
 func (v *ApiVisitor) VisitApi(ctx *api.ApiContext) interface{} {
 	var final Api
 	final.importM = map[string]PlaceHolder{}
-	final.typeM = map[string]PlaceHolder{}
+	final.typeM = map[string]TypeExpr{}
 	final.serviceM = map[string]PlaceHolder{}
 	final.handlerM = map[string]PlaceHolder{}
 	final.routeM = map[string]PlaceHolder{}
@@ -114,7 +115,7 @@ func (v *ApiVisitor) acceptType(root *Api, final *Api) {
 		}
 
 		v.acceptField(tp)
-		final.typeM[tp.NameExpr().Text()] = Holder
+		final.typeM[tp.NameExpr().Text()] = tp
 		final.Type = append(final.Type, tp)
 	}
 }
