@@ -361,7 +361,9 @@ func (v *ApiVisitor) VisitDataType(ctx *api.DataTypeContext) interface{} {
 		return ctx.PointerType().Accept(v)
 	}
 
-	return ctx.TypeStruct().Accept(v)
+	structExpr := ctx.TypeStruct().Accept(v).(*TypeStruct)
+	v.panic(structExpr.Name, "unsupported nested struct")
+	return nil
 }
 
 // VisitPointerType implements from api.BaseApiParserVisitor

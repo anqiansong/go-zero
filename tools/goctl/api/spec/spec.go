@@ -21,8 +21,6 @@ type (
 		Imports []Import
 		Types   []Type
 		Service Service
-		// key: package, value: Import
-		ImportKV map[string]Import
 	}
 
 	// Import describes api import
