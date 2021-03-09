@@ -1,7 +1,6 @@
 package gogen
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -68,7 +67,7 @@ func genTypes(dir string, importMap map[string]string, cfg *config.Config, api *
 		if len(item.AsPackage) > 0 {
 			refer := importMap[item.Value]
 			if len(refer) == 0 {
-				return errors.New("should specific the import go path of from command line." + item.Value)
+				return fmt.Errorf("should specific the import go path of %s from command line", item.Value)
 			}
 
 			imports = append(imports, fmt.Sprintf(`%s "%s"`, item.AsPackage, refer))
