@@ -293,22 +293,26 @@ func (v *ApiVisitor) VisitAnonymousFiled(ctx *api.AnonymousFiledContext) interfa
 	var field TypeField
 	field.IsAnonymous = true
 	var pkg *Package
+	var pkgStr string
 	if ctx.PackageExpr() != nil {
 		p := ctx.PackageExpr().Accept(v)
 		pkg = p.(*Package)
+		pkgStr = pkg.Name.Text() + "."
 	}
 	if ctx.GetStar() != nil {
 		nameExpr := v.newExprWithTerminalNode(ctx.ID())
 		field.DataType = &Pointer{
 			Package:     pkg,
-			PointerExpr: v.newExprWithText(ctx.GetStar().GetText()+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop()),
+			PointerExpr: v.newExprWithText(ctx.GetStar().GetText()+pkgStr+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop()),
 			Star:        v.newExprWithToken(ctx.GetStar()),
 			Name:        nameExpr,
 		}
 	} else {
+		lit := v.newExprWithTerminalNode(ctx.ID())
+		lit.SetText(pkgStr + lit.Text())
 		field.DataType = &Literal{
 			Package: pkg,
-			Literal: v.newExprWithTerminalNode(ctx.ID()),
+			Literal: lit,
 		}
 	}
 
@@ -327,6 +331,9 @@ func (v *ApiVisitor) VisitDataType(ctx *api.DataTypeContext) interface{} {
 		}
 
 		idExpr := v.newExprWithTerminalNode(ctx.ID())
+		if pkg != nil {
+			idExpr.SetText(pkg.Name.Text() + "." + ctx.ID().GetText())
+		}
 		return &Literal{Package: pkg, Literal: idExpr}
 	}
 

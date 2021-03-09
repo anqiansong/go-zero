@@ -87,7 +87,11 @@ type (
 
 	// DefineStruct describes api structure
 	DefineStruct struct {
+		// Package describes the package name, such as foo is the package of foo.Bar
 		Package string
+		// TypeName describes the raw type, such as Bar is the type of foo.Bar
+		TypeName string
+		// RawName is the result of Package join with TypeName, such as foo.Foo
 		RawName string
 		Members []Member
 		Docs    Doc

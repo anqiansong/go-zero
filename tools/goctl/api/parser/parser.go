@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"unicode"
 
 	"github.com/tal-tech/go-zero/tools/goctl/api/parser/g4/ast"
@@ -100,9 +101,10 @@ func (p parser) fillTypes() error {
 				members = append(members, p.fieldToMember(item))
 			}
 			p.spec.Types = append(p.spec.Types, spec.DefineStruct{
-				RawName: v.Name.Text(),
-				Members: members,
-				Docs:    p.stringExprs(v.Doc()),
+				RawName:  v.Name.Text(),
+				TypeName: v.Name.Text(),
+				Members:  members,
+				Docs:     p.stringExprs(v.Doc()),
 			})
 		default:
 			return fmt.Errorf("unknown type %+v", v)
@@ -183,7 +185,7 @@ func (p parser) astTypeToSpec(in ast.DataType) spec.Type {
 			pkg = v.Package.Name.Text()
 		}
 
-		return spec.DefineStruct{Package: pkg, RawName: raw}
+		return spec.DefineStruct{Package: pkg, RawName: raw, TypeName: strings.TrimPrefix(raw, pkg+".")}
 	case *ast.Interface:
 		return spec.InterfaceType{RawName: v.Literal.Text()}
 	case *ast.Map:
@@ -201,8 +203,9 @@ func (p parser) astTypeToSpec(in ast.DataType) spec.Type {
 			pkg = v.Package.Name.Text()
 		}
 		return spec.PointerType{RawName: v.PointerExpr.Text(), Type: spec.DefineStruct{
-			RawName: raw,
-			Package: pkg,
+			RawName:  raw,
+			TypeName: v.Name.Text(),
+			Package:  pkg,
 		}}
 	}
 
