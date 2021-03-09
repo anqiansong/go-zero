@@ -413,7 +413,7 @@ func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr Da
 			}
 
 			structure := imp.Structure
-			structName := strings.TrimPrefix(v.Literal.Text(), pkg+".")
+			structName := v.Literal.Text()
 			if _, ok = structure[structName]; !ok {
 				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.Literal.Line(), v.Literal.Column(), structName, imp.Path)
 			}
@@ -439,7 +439,7 @@ func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr Da
 			}
 
 			structure := imp.Structure
-			structName := strings.TrimPrefix(v.PointerExpr.Text(), "*"+pkg+".")
+			structName := v.PointerExpr.Text()
 			if _, ok = structure[structName]; !ok {
 				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.PointerExpr.Line(), v.PointerExpr.Column(), structName, imp.Path)
 			}

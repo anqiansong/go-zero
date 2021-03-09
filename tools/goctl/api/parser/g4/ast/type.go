@@ -299,24 +299,16 @@ func (v *ApiVisitor) VisitAnonymousFiled(ctx *api.AnonymousFiledContext) interfa
 	}
 	if ctx.GetStar() != nil {
 		nameExpr := v.newExprWithTerminalNode(ctx.ID())
-		pointerExpr := v.newExprWithText(ctx.GetStar().GetText()+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop())
-		if pkg != nil {
-			pointerExpr = v.newExprWithText(ctx.GetStar().GetText()+pkg.Name.Text()+"."+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop())
-		}
 		field.DataType = &Pointer{
 			Package:     pkg,
-			PointerExpr: pointerExpr,
+			PointerExpr: v.newExprWithText(ctx.GetStar().GetText()+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop()),
 			Star:        v.newExprWithToken(ctx.GetStar()),
 			Name:        nameExpr,
 		}
 	} else {
-		nameExpr := v.newExprWithTerminalNode(ctx.ID())
-		if pkg != nil {
-			nameExpr = v.newExprWithText(pkg.Name.Text()+"."+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop())
-		}
 		field.DataType = &Literal{
 			Package: pkg,
-			Literal: nameExpr,
+			Literal: v.newExprWithTerminalNode(ctx.ID()),
 		}
 	}
 
@@ -335,9 +327,6 @@ func (v *ApiVisitor) VisitDataType(ctx *api.DataTypeContext) interface{} {
 		}
 
 		idExpr := v.newExprWithTerminalNode(ctx.ID())
-		if pkg != nil {
-			idExpr = v.newExprWithText(pkg.Name.Text()+"."+idExpr.Text(), pkg.Name.Line(), pkg.Name.Column(), pkg.Name.Start(), idExpr.Stop())
-		}
 		return &Literal{Package: pkg, Literal: idExpr}
 	}
 
