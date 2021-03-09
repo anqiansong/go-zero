@@ -83,7 +83,10 @@ func (p parser) fillSyntax() {
 func (p parser) fillImport() {
 	if len(p.ast.Import) > 0 {
 		for _, item := range p.ast.Import {
-			p.spec.Imports = append(p.spec.Imports, spec.Import{Value: item.Value.Text()})
+			p.spec.Imports = append(p.spec.Imports, spec.Import{
+				Value:     item.Value.Text(),
+				AsPackage: item.Package.Text(),
+			})
 		}
 	}
 }
@@ -175,8 +178,12 @@ func (p parser) astTypeToSpec(in ast.DataType) spec.Type {
 		if api.IsBasicType(raw) {
 			return spec.PrimitiveType{RawName: raw}
 		}
+		var pkg string
+		if v.Package != nil {
+			pkg = v.Package.Name.Text()
+		}
 
-		return spec.DefineStruct{RawName: raw}
+		return spec.DefineStruct{Package: pkg, RawName: raw}
 	case *ast.Interface:
 		return spec.InterfaceType{RawName: v.Literal.Text()}
 	case *ast.Map:
@@ -189,7 +196,14 @@ func (p parser) astTypeToSpec(in ast.DataType) spec.Type {
 			return spec.PointerType{RawName: v.PointerExpr.Text(), Type: spec.PrimitiveType{RawName: raw}}
 		}
 
-		return spec.PointerType{RawName: v.PointerExpr.Text(), Type: spec.DefineStruct{RawName: raw}}
+		var pkg string
+		if v.Package != nil {
+			pkg = v.Package.Name.Text()
+		}
+		return spec.PointerType{RawName: v.PointerExpr.Text(), Type: spec.DefineStruct{
+			RawName: raw,
+			Package: pkg,
+		}}
 	}
 
 	panic(fmt.Sprintf("unspported type %+v", in))

@@ -132,8 +132,10 @@ func (v *ApiVisitor) acceptField(tp TypeExpr) {
 		}
 
 		if _, ok := m[f.Name.Text()]; ok {
-			panic(fmt.Sprintf("duplicate field: %s", f.Name.Text()))
+			v.panic(f.Name, fmt.Sprintf("duplicate field: %s", f.Name.Text()))
 		}
+
+		m[f.Name.Text()] = lang.Placeholder
 	}
 }
 

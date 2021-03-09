@@ -299,14 +299,21 @@ func (v *ApiVisitor) VisitAnonymousFiled(ctx *api.AnonymousFiledContext) interfa
 	}
 	if ctx.GetStar() != nil {
 		nameExpr := v.newExprWithTerminalNode(ctx.ID())
+		pointerExpr := v.newExprWithText(ctx.GetStar().GetText()+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop())
+		if pkg != nil {
+			pointerExpr = v.newExprWithText(ctx.GetStar().GetText()+pkg.Name.Text()+"."+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop())
+		}
 		field.DataType = &Pointer{
 			Package:     pkg,
-			PointerExpr: v.newExprWithText(ctx.GetStar().GetText()+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop()),
+			PointerExpr: pointerExpr,
 			Star:        v.newExprWithToken(ctx.GetStar()),
 			Name:        nameExpr,
 		}
 	} else {
 		nameExpr := v.newExprWithTerminalNode(ctx.ID())
+		if pkg != nil {
+			nameExpr = v.newExprWithText(pkg.Name.Text()+"."+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop())
+		}
 		field.DataType = &Literal{
 			Package: pkg,
 			Literal: nameExpr,
@@ -326,28 +333,38 @@ func (v *ApiVisitor) VisitDataType(ctx *api.DataTypeContext) interface{} {
 			p := ctx.PackageExpr().Accept(v)
 			pkg = p.(*Package)
 		}
+
 		idExpr := v.newExprWithTerminalNode(ctx.ID())
+		if pkg != nil {
+			idExpr = v.newExprWithText(pkg.Name.Text()+"."+idExpr.Text(), pkg.Name.Line(), pkg.Name.Column(), pkg.Name.Start(), idExpr.Stop())
+		}
 		return &Literal{Package: pkg, Literal: idExpr}
 	}
+
 	if ctx.MapType() != nil {
 		t := ctx.MapType().Accept(v)
 		return t
 	}
+
 	if ctx.ArrayType() != nil {
 		return ctx.ArrayType().Accept(v)
 	}
+
 	if ctx.GetInter() != nil {
 		return &Interface{Literal: v.newExprWithToken(ctx.GetInter())}
 	}
+
 	if ctx.GetTime() != nil {
 		// todo: reopen if it is necessary
 		timeExpr := v.newExprWithToken(ctx.GetTime())
 		v.panic(timeExpr, "unsupported time.Time")
 		return &Time{Literal: timeExpr}
 	}
+
 	if ctx.PointerType() != nil {
 		return ctx.PointerType().Accept(v)
 	}
+
 	return ctx.TypeStruct().Accept(v)
 }
 
@@ -359,6 +376,7 @@ func (v *ApiVisitor) VisitPointerType(ctx *api.PointerTypeContext) interface{} {
 		p := ctx.PackageExpr().Accept(v)
 		pkg = p.(*Package)
 	}
+
 	return &Pointer{
 		Package:     pkg,
 		PointerExpr: v.newExprWithText(ctx.GetText(), ctx.GetStar().GetLine(), ctx.GetStar().GetColumn(), ctx.GetStar().GetStart(), ctx.ID().GetSymbol().GetStop()),

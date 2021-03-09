@@ -22,6 +22,13 @@ type (
 
 	// ParserOption defines an function with argument Parser
 	ParserOption func(p *Parser)
+
+	// ImportInfo describes the import path, the import package and the elements(only structure) in imported file
+	ImportInfo struct {
+		Path      string
+		Package   string
+		Structure map[string]PlaceHolder
+	}
 )
 
 // NewParser creates an instance for Parser
@@ -92,6 +99,7 @@ func (p *Parser) parse(filename, content string) (*Api, error) {
 	}
 
 	var apiAstList []*Api
+	importInfo := make(map[string]*ImportInfo)
 	apiAstList = append(apiAstList, root)
 	for _, imp := range root.Import {
 		path := imp.Value.Text()
@@ -110,10 +118,19 @@ func (p *Parser) parse(filename, content string) (*Api, error) {
 			return nil, err
 		}
 
+		if imp.Package != nil {
+			importInfo[imp.Package.Text()] = &ImportInfo{
+				Path:      path,
+				Package:   imp.Package.Text(),
+				Structure: nestedApi.typeM,
+			}
+			continue
+		}
+
 		apiAstList = append(apiAstList, nestedApi)
 	}
 
-	err = p.checkTypeDeclaration(apiAstList)
+	err = p.checkTypeDeclaration(apiAstList, importInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +302,7 @@ func (p *Parser) memberFill(apiList []*Api) *Api {
 }
 
 // checkTypeDeclaration checks whether a struct type has been declared in context
-func (p *Parser) checkTypeDeclaration(apiList []*Api) error {
+func (p *Parser) checkTypeDeclaration(apiList []*Api, importInfo map[string]*ImportInfo) error {
 	types := make(map[string]TypeExpr)
 
 	for _, root := range apiList {
@@ -296,7 +313,7 @@ func (p *Parser) checkTypeDeclaration(apiList []*Api) error {
 
 	for _, apiItem := range apiList {
 		linePrefix := apiItem.LinePrefix
-		err := p.checkTypes(apiItem, linePrefix, types)
+		err := p.checkTypes(apiItem, linePrefix, types, importInfo)
 		if err != nil {
 			return err
 		}
@@ -359,7 +376,7 @@ func (p *Parser) checkRequestBody(route *Route, types map[string]TypeExpr, lineP
 	return nil
 }
 
-func (p *Parser) checkTypes(apiItem *Api, linePrefix string, types map[string]TypeExpr) error {
+func (p *Parser) checkTypes(apiItem *Api, linePrefix string, types map[string]TypeExpr, importInfo map[string]*ImportInfo) error {
 	for _, each := range apiItem.Type {
 		tp, ok := each.(*TypeStruct)
 		if !ok {
@@ -367,7 +384,7 @@ func (p *Parser) checkTypes(apiItem *Api, linePrefix string, types map[string]Ty
 		}
 
 		for _, member := range tp.Fields {
-			err := p.checkType(linePrefix, types, member.DataType)
+			err := p.checkType(linePrefix, types, member.DataType, importInfo)
 			if err != nil {
 				return err
 			}
@@ -376,7 +393,7 @@ func (p *Parser) checkTypes(apiItem *Api, linePrefix string, types map[string]Ty
 	return nil
 }
 
-func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr DataType) error {
+func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr DataType, importInfo map[string]*ImportInfo) error {
 	if expr == nil {
 		return nil
 	}
@@ -387,10 +404,25 @@ func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr Da
 		if api.IsBasicType(name) {
 			return nil
 		}
-		_, ok := types[name]
-		if !ok {
-			return fmt.Errorf("%s line %d:%d can not found declaration '%s' in context",
-				linePrefix, v.Literal.Line(), v.Literal.Column(), name)
+
+		if v.Package != nil {
+			pkg := v.Package.Name.Text()
+			imp, ok := importInfo[pkg]
+			if !ok {
+				return fmt.Errorf("%s line %d:%d package '%s' is not defined in imports", linePrefix, v.Literal.Line(), v.Literal.Column(), pkg)
+			}
+
+			structure := imp.Structure
+			structName := strings.TrimPrefix(v.Literal.Text(), pkg+".")
+			if _, ok = structure[structName]; !ok {
+				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.Literal.Line(), v.Literal.Column(), structName, imp.Path)
+			}
+		} else {
+			_, ok := types[name]
+			if !ok {
+				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in context",
+					linePrefix, v.Literal.Line(), v.Literal.Column(), name)
+			}
 		}
 
 	case *Pointer:
@@ -398,15 +430,30 @@ func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr Da
 		if api.IsBasicType(name) {
 			return nil
 		}
-		_, ok := types[name]
-		if !ok {
-			return fmt.Errorf("%s line %d:%d can not found declaration '%s' in context",
-				linePrefix, v.Name.Line(), v.Name.Column(), name)
+
+		if v.Package != nil {
+			pkg := v.Package.Name.Text()
+			imp, ok := importInfo[pkg]
+			if !ok {
+				return fmt.Errorf("%s line %d:%d package '%s' is not defined in imports", linePrefix, v.PointerExpr.Line(), v.PointerExpr.Column(), pkg)
+			}
+
+			structure := imp.Structure
+			structName := strings.TrimPrefix(v.PointerExpr.Text(), "*"+pkg+".")
+			if _, ok = structure[structName]; !ok {
+				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.PointerExpr.Line(), v.PointerExpr.Column(), structName, imp.Path)
+			}
+		} else {
+			_, ok := types[name]
+			if !ok {
+				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in context",
+					linePrefix, v.Name.Line(), v.Name.Column(), name)
+			}
 		}
 	case *Map:
-		return p.checkType(linePrefix, types, v.Value)
+		return p.checkType(linePrefix, types, v.Value, importInfo)
 	case *Array:
-		return p.checkType(linePrefix, types, v.Literal)
+		return p.checkType(linePrefix, types, v.Literal, importInfo)
 	default:
 		return nil
 	}

@@ -25,7 +25,8 @@ type (
 
 	// Import describes api import
 	Import struct {
-		Value string
+		Value     string
+		AsPackage string
 	}
 
 	// Group defines a set of routing information
@@ -86,6 +87,7 @@ type (
 
 	// DefineStruct describes api structure
 	DefineStruct struct {
+		Package string
 		RawName string
 		Members []Member
 		Docs    Doc

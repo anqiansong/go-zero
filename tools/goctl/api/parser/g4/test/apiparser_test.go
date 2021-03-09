@@ -137,6 +137,19 @@ func TestApiParser(t *testing.T) {
 		assert.Error(t, err)
 	})
 
+	t.Run("duplicateImportPackage", func(t *testing.T) {
+		_, err := parser.ParseContent(`
+		import "foo.api" as foo
+		import "bar.api" as foo
+		`)
+		assert.Error(t, err)
+	})
+
+	t.Run("importPackageSyntaxException", func(t *testing.T) {
+		_, err := parser.ParseContent(`import "foo.api" as`)
+		assert.Error(t, err)
+	})
+
 	t.Run("duplicateKey", func(t *testing.T) {
 		_, err := parser.ParseContent(`
 		info (
@@ -272,6 +285,16 @@ func TestApiParser(t *testing.T) {
 		`, file))
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
+	})
+
+	t.Run("duplicateField", func(t *testing.T) {
+		_, err := parser.ParseContent(`
+		type Foo {
+			Foo int
+			Foo string
+		}
+		`)
+		assert.Error(t, err)
 	})
 
 	t.Run("normal", func(t *testing.T) {
