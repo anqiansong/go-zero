@@ -57,8 +57,9 @@ type (
 	}
 
 	// Literal describes the basic types of golang, non-reference types,
-	// such as int, bool, Foo,...
+	// such as int, bool, Foo,foo.Bar...
 	Literal struct {
+		Package *Package
 		Literal Expr
 	}
 
@@ -92,9 +93,16 @@ type (
 
 	// Pointer describes the pointer ast for api syntax
 	Pointer struct {
+		Package     *Package
 		PointerExpr Expr
 		Star        Expr
 		Name        Expr
+	}
+
+	// Package describes the package of type
+	Package struct {
+		Name Expr
+		Dot  Expr
 	}
 )
 
@@ -284,17 +292,27 @@ func (v *ApiVisitor) VisitAnonymousFiled(ctx *api.AnonymousFiledContext) interfa
 	stop := ctx.GetStop()
 	var field TypeField
 	field.IsAnonymous = true
+	var pkg *Package
+	if ctx.PackageExpr() != nil {
+		p := ctx.PackageExpr().Accept(v)
+		pkg = p.(*Package)
+	}
 	if ctx.GetStar() != nil {
 		nameExpr := v.newExprWithTerminalNode(ctx.ID())
 		field.DataType = &Pointer{
+			Package:     pkg,
 			PointerExpr: v.newExprWithText(ctx.GetStar().GetText()+ctx.ID().GetText(), start.GetLine(), start.GetColumn(), start.GetStart(), stop.GetStop()),
 			Star:        v.newExprWithToken(ctx.GetStar()),
 			Name:        nameExpr,
 		}
 	} else {
 		nameExpr := v.newExprWithTerminalNode(ctx.ID())
-		field.DataType = &Literal{Literal: nameExpr}
+		field.DataType = &Literal{
+			Package: pkg,
+			Literal: nameExpr,
+		}
 	}
+
 	field.DocExpr = v.getDoc(ctx)
 	field.CommentExpr = v.getComment(ctx)
 	return &field
@@ -303,8 +321,13 @@ func (v *ApiVisitor) VisitAnonymousFiled(ctx *api.AnonymousFiledContext) interfa
 // VisitDataType implements from api.BaseApiParserVisitor
 func (v *ApiVisitor) VisitDataType(ctx *api.DataTypeContext) interface{} {
 	if ctx.ID() != nil {
+		var pkg *Package
+		if ctx.PackageExpr() != nil {
+			p := ctx.PackageExpr().Accept(v)
+			pkg = p.(*Package)
+		}
 		idExpr := v.newExprWithTerminalNode(ctx.ID())
-		return &Literal{Literal: idExpr}
+		return &Literal{Package: pkg, Literal: idExpr}
 	}
 	if ctx.MapType() != nil {
 		t := ctx.MapType().Accept(v)
@@ -331,10 +354,25 @@ func (v *ApiVisitor) VisitDataType(ctx *api.DataTypeContext) interface{} {
 // VisitPointerType implements from api.BaseApiParserVisitor
 func (v *ApiVisitor) VisitPointerType(ctx *api.PointerTypeContext) interface{} {
 	nameExpr := v.newExprWithTerminalNode(ctx.ID())
+	var pkg *Package
+	if ctx.PackageExpr() != nil {
+		p := ctx.PackageExpr().Accept(v)
+		pkg = p.(*Package)
+	}
 	return &Pointer{
+		Package:     pkg,
 		PointerExpr: v.newExprWithText(ctx.GetText(), ctx.GetStar().GetLine(), ctx.GetStar().GetColumn(), ctx.GetStar().GetStart(), ctx.ID().GetSymbol().GetStop()),
 		Star:        v.newExprWithToken(ctx.GetStar()),
 		Name:        nameExpr,
+	}
+}
+
+// VisitPackageExpr implements from api.BaseApiParserVisitor
+func (v *ApiVisitor) VisitPackageExpr(ctx *api.PackageExprContext) interface{} {
+	nameExpr := v.newExprWithToken(ctx.GetPackageName())
+	return &Package{
+		Name: nameExpr,
+		Dot:  v.newExprWithToken(ctx.GetDot()),
 	}
 }
 
@@ -423,6 +461,12 @@ func (l *Literal) Equal(dt DataType) bool {
 	v, ok := dt.(*Literal)
 	if !ok {
 		return false
+	}
+
+	if l.Package != nil {
+		if !l.Package.Equal(v.Package) {
+			return false
+		}
 	}
 
 	return l.Literal.Equal(v.Literal)
@@ -598,11 +642,36 @@ func (p *Pointer) Equal(dt DataType) bool {
 		return false
 	}
 
+	if p.Package != nil {
+		if !p.Package.Equal(v.Package) {
+			return false
+		}
+	}
+
 	return p.Name.Equal(v.Name)
 }
 
 // IsNotNil returns whether the instance is nil or not
 func (p *Pointer) IsNotNil() bool {
+	return p != nil
+}
+
+// Format provides a formatter for api command, now nothing to do
+func (p *Package) Format() error {
+	return nil
+}
+
+// Equal compares whether the element literals in two Package are equal
+func (p *Package) Equal(pkg *Package) bool {
+	if pkg == nil {
+		return false
+	}
+
+	return p.Name.Equal(pkg.Name)
+}
+
+// IsNotNil returns whether the instance is nil or not
+func (p *Package) IsNotNil() bool {
 	return p != nil
 }
 
