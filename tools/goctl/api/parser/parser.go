@@ -25,7 +25,6 @@ func Parse(filename string) (*spec.ApiSpec, error) {
 	}
 
 	sp := new(spec.ApiSpec)
-	sp.ImportKV = map[string]spec.Import{}
 	p := parser{ast: ast, spec: sp}
 	err = p.convert2Spec()
 	if err != nil {
@@ -44,7 +43,6 @@ func ParseContent(content, workDir string) (*spec.ApiSpec, error) {
 	}
 
 	sp := new(spec.ApiSpec)
-	sp.ImportKV = map[string]spec.Import{}
 	p := parser{ast: ast, spec: sp}
 	err = p.convert2Spec()
 	if err != nil {
@@ -57,8 +55,12 @@ func ParseContent(content, workDir string) (*spec.ApiSpec, error) {
 func (p parser) convert2Spec() error {
 	p.fillInfo()
 	p.fillSyntax()
-	p.fillImport()
-	err := p.fillTypes()
+	err := p.fillImport()
+	if err != nil {
+		return err
+	}
+
+	err = p.fillTypes()
 	if err != nil {
 		return err
 	}
@@ -83,48 +85,48 @@ func (p parser) fillSyntax() {
 	}
 }
 
-func (p parser) fillImport() {
+func (p parser) fillImport() error {
 	if len(p.ast.Import) > 0 {
 		for _, item := range p.ast.Import {
 			var pkg string
 			if item.Package != nil {
 				pkg = item.Package.Text()
 			}
+
+			var types []spec.Type
+			if len(pkg) > 0 {
+				info, ok := p.ast.ImportInfo[pkg]
+				if ok {
+					for _, e := range info.Structure {
+						switch v := (e).(type) {
+						case *ast.TypeStruct:
+							var members []spec.Member
+							for _, item := range v.Fields {
+								members = append(members, p.fieldToMember(item))
+							}
+							types = append(types, spec.DefineStruct{
+								RawName:  v.Name.Text(),
+								TypeName: v.Name.Text(),
+								Members:  members,
+								Docs:     p.stringExprs(v.Doc()),
+							})
+						default:
+							return fmt.Errorf("unknown type %+v", v)
+						}
+					}
+				}
+			}
 			p.spec.Imports = append(p.spec.Imports, spec.Import{
 				Value:     strings.TrimSuffix(strings.TrimPrefix(item.Value.Text(), `"`), `"`),
 				AsPackage: pkg,
+				Types:     types,
 			})
 		}
 	}
+	return nil
 }
 
 func (p parser) fillTypes() error {
-	for k, item := range p.ast.ImportInfo {
-		types := make([]spec.Type, 0)
-		for _, e := range item.Structure {
-			switch v := (e).(type) {
-			case *ast.TypeStruct:
-				var members []spec.Member
-				for _, item := range v.Fields {
-					members = append(members, p.fieldToMember(item))
-				}
-				types = append(types, spec.DefineStruct{
-					RawName:  v.Name.Text(),
-					TypeName: v.Name.Text(),
-					Members:  members,
-					Docs:     p.stringExprs(v.Doc()),
-				})
-			default:
-				return fmt.Errorf("unknown type %+v", v)
-			}
-		}
-		p.spec.ImportKV[k] = spec.Import{
-			Value:     item.Path,
-			AsPackage: item.Package,
-			Types:     types,
-		}
-	}
-
 	for _, item := range p.ast.Type {
 		switch v := (item).(type) {
 		case *ast.TypeStruct:
