@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tal-tech/go-zero/core/logx"
 	"github.com/tal-tech/go-zero/tools/goctl/api/parser/g4/ast"
 )
 
@@ -99,20 +100,23 @@ var (
 )
 
 func TestApiParser(t *testing.T) {
+	pwd, err := os.Getwd()
+	assert.Nil(t, err)
+
 	t.Run("missDeclarationAPI", func(t *testing.T) {
-		_, err := parser.ParseContent(missDeclarationAPI)
+		_, err := parser.ParseContent(missDeclarationAPI, pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
 
 	t.Run("missDeclarationAPI", func(t *testing.T) {
-		_, err := parser.ParseContent(missDeclarationInArrayAPI)
+		_, err := parser.ParseContent(missDeclarationInArrayAPI, pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
 
 	t.Run("missDeclarationAPI", func(t *testing.T) {
-		_, err := parser.ParseContent(missDeclarationInArrayAPI2)
+		_, err := parser.ParseContent(missDeclarationInArrayAPI2, pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
@@ -124,7 +128,7 @@ func TestApiParser(t *testing.T) {
 			return
 		}
 
-		_, err = parser.ParseContent(fmt.Sprintf(`import "%s"`, file))
+		_, err = parser.ParseContent(fmt.Sprintf(`import "%s"`, file), pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
@@ -133,7 +137,7 @@ func TestApiParser(t *testing.T) {
 		_, err := parser.ParseContent(`
 		import "foo.api"
 		import "foo.api"
-		`)
+		`, pwd)
 		assert.Error(t, err)
 	})
 
@@ -141,12 +145,12 @@ func TestApiParser(t *testing.T) {
 		_, err := parser.ParseContent(`
 		import "foo.api" as foo
 		import "bar.api" as foo
-		`)
+		`, pwd)
 		assert.Error(t, err)
 	})
 
 	t.Run("importPackageSyntaxException", func(t *testing.T) {
-		_, err := parser.ParseContent(`import "foo.api" as`)
+		_, err := parser.ParseContent(`import "foo.api" as`, pwd)
 		assert.Error(t, err)
 	})
 
@@ -156,7 +160,7 @@ func TestApiParser(t *testing.T) {
 			foo: bar
 			foo: bar
 		)
-		`)
+		`, pwd)
 		assert.Error(t, err)
 	})
 
@@ -169,7 +173,7 @@ func TestApiParser(t *testing.T) {
 
 		_, err = parser.ParseContent(fmt.Sprintf(`
 		syntax = "v1"
-		import "%s"`, file))
+		import "%s"`, file), pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
@@ -183,7 +187,7 @@ func TestApiParser(t *testing.T) {
 
 		_, err = parser.ParseContent(fmt.Sprintf(`
 		syntax = "v1"
-		import "%s"`, file))
+		import "%s"`, file), pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
@@ -202,7 +206,7 @@ func TestApiParser(t *testing.T) {
 			@handler foo
 			post /foo
 		}
-		`, file))
+		`, file), pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
@@ -216,7 +220,7 @@ func TestApiParser(t *testing.T) {
 			@handler foo
 			post /bar
 		}
-		`)
+		`, pwd)
 		assert.Error(t, err)
 
 		file := filepath.Join(t.TempDir(), "foo.api")
@@ -231,7 +235,7 @@ func TestApiParser(t *testing.T) {
 			@handler foo
 			post /foo
 		}
-		`, file))
+		`, file), pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
@@ -245,7 +249,7 @@ func TestApiParser(t *testing.T) {
 			@handler bar
 			post /foo
 		}
-		`)
+		`, pwd)
 		assert.Error(t, err)
 
 		file := filepath.Join(t.TempDir(), "foo.api")
@@ -260,7 +264,7 @@ func TestApiParser(t *testing.T) {
 			@handler foo
 			post /foo
 		}
-		`, file))
+		`, file), pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
@@ -269,7 +273,7 @@ func TestApiParser(t *testing.T) {
 		_, err := parser.ParseContent(`
 		type Foo int
 		type Foo bool
-		`)
+		`, pwd)
 		assert.Error(t, err)
 
 		file := filepath.Join(t.TempDir(), "foo.api")
@@ -282,7 +286,7 @@ func TestApiParser(t *testing.T) {
 		import "%s"
 		
 		type Foo bool
-		`, file))
+		`, file), pwd)
 		assert.Error(t, err)
 		fmt.Printf("%+v\n", err)
 	})
@@ -293,12 +297,12 @@ func TestApiParser(t *testing.T) {
 			Foo int
 			Foo string
 		}
-		`)
+		`, pwd)
 		assert.Error(t, err)
 	})
 
 	t.Run("normal", func(t *testing.T) {
-		v, err := parser.ParseContent(normalAPI)
+		v, err := parser.ParseContent(normalAPI, pwd)
 		assert.Nil(t, err)
 		body := &ast.Body{
 			Lp:   ast.NewTextExpr("("),
@@ -388,5 +392,16 @@ func TestApiParser(t *testing.T) {
 				},
 			},
 		}))
+	})
+
+	t.Run("positive", func(t *testing.T) {
+		_, err := parser.Parse("./apis/media.api")
+		assert.Nil(t, err)
+	})
+
+	t.Run("negative", func(t *testing.T) {
+		_, err := parser.Parse("./apis/media_err.api")
+		logx.Error(err)
+		assert.Error(t, err)
 	})
 }

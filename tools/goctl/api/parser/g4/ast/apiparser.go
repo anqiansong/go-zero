@@ -82,17 +82,17 @@ func (p *Parser) Parse(filename string) (*Api, error) {
 		return nil, err
 	}
 
-	return p.parse(filename, data)
+	return p.parse(filename, data, filepath.Dir(filename))
 }
 
 // ParseContent is used to parse the api from the specified content
-func (p *Parser) ParseContent(content string) (*Api, error) {
-	return p.parse("", content)
+func (p *Parser) ParseContent(content, workDir string) (*Api, error) {
+	return p.parse("", content, workDir)
 }
 
 // parse is used to parse api from the content
 // filename is only used to mark the file where the error is located
-func (p *Parser) parse(filename, content string) (*Api, error) {
+func (p *Parser) parse(filename, content, workDir string) (*Api, error) {
 	root, err := p.invoke(filename, content)
 	if err != nil {
 		return nil, err
@@ -103,7 +103,16 @@ func (p *Parser) parse(filename, content string) (*Api, error) {
 	apiAstList = append(apiAstList, root)
 	for _, imp := range root.Import {
 		path := imp.Value.Text()
-		data, err := p.readContent(path)
+		var abs string
+		if filepath.IsAbs(path) {
+			abs = path
+		} else {
+			abs, err = filepath.Abs(filepath.Join(workDir, path))
+			if err != nil {
+				return nil, err
+			}
+		}
+		data, err := p.readContent(abs)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +162,7 @@ func (p *Parser) invoke(linePrefix, content string) (v *Api, err error) {
 	}()
 
 	if linePrefix != "" {
-		p.linePrefix = linePrefix
+		p.linePrefix = filepath.Base(linePrefix)
 	}
 
 	inputStream := antlr.NewInputStream(content)
@@ -413,7 +422,7 @@ func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr Da
 			}
 
 			structure := imp.Structure
-			structName := v.Literal.Text()
+			structName := strings.TrimPrefix(v.Literal.Text(), pkg+".")
 			if _, ok = structure[structName]; !ok {
 				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.Literal.Line(), v.Literal.Column(), structName, imp.Path)
 			}
@@ -439,7 +448,7 @@ func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr Da
 			}
 
 			structure := imp.Structure
-			structName := v.PointerExpr.Text()
+			structName := v.Name.Text()
 			if _, ok = structure[structName]; !ok {
 				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.PointerExpr.Line(), v.PointerExpr.Column(), structName, imp.Path)
 			}
