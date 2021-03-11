@@ -10,19 +10,18 @@ import (
 
 // Api describes syntax for api
 type Api struct {
-	LinePrefix     string
-	Syntax         *SyntaxExpr
-	Import         []*ImportExpr
-	importM        map[string]PlaceHolder
-	Info           *InfoExpr
-	Type           []TypeExpr
-	typeM          map[string]TypeExpr
-	Service        []*Service
-	serviceM       map[string]PlaceHolder
-	handlerM       map[string]PlaceHolder
-	routeM         map[string]PlaceHolder
-	importPackageM map[string]string
-	ImportInfo     map[string]*ImportInfo
+	LinePrefix string
+	Syntax     *SyntaxExpr
+	Import     []*ImportExpr
+	importM    map[string]PlaceHolder
+	Info       *InfoExpr
+	Type       []TypeExpr
+	typeM      map[string]TypeExpr
+	Service    []*Service
+	serviceM   map[string]PlaceHolder
+	handlerM   map[string]PlaceHolder
+	routeM     map[string]PlaceHolder
+	ImportInfo map[string][]*ImportInfo
 }
 
 // VisitApi implements from api.BaseApiParserVisitor
@@ -33,7 +32,6 @@ func (v *ApiVisitor) VisitApi(ctx *api.ApiContext) interface{} {
 	final.serviceM = map[string]PlaceHolder{}
 	final.handlerM = map[string]PlaceHolder{}
 	final.routeM = map[string]PlaceHolder{}
-	final.importPackageM = map[string]string{}
 	for _, each := range ctx.AllSpec() {
 		root := each.Accept(v).(*Api)
 		v.acceptSyntax(root, &final)
@@ -163,15 +161,6 @@ func (v *ApiVisitor) acceptImport(root *Api, final *Api) {
 		importValue := imp.Value.Text()
 		if _, ok := final.importM[importValue]; ok {
 			v.panic(imp.Import, fmt.Sprintf("duplicate import: %s", importValue))
-		}
-
-		if imp.Package != nil {
-			packageName := imp.Package.Text()
-			if _, ok := final.importPackageM[packageName]; ok {
-				v.panic(imp.Package, fmt.Sprintf("duplicate package import: %s", packageName))
-			}
-
-			final.importPackageM[packageName] = importValue
 		}
 
 		final.importM[imp.Value.Text()] = Holder

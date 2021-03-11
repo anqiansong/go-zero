@@ -99,7 +99,7 @@ func (p *Parser) parse(filename, content, workDir string) (*Api, error) {
 	}
 
 	var apiAstList []*Api
-	importInfo := make(map[string]*ImportInfo)
+	importInfo := make(map[string][]*ImportInfo)
 	apiAstList = append(apiAstList, root)
 	for _, imp := range root.Import {
 		path := imp.Value.Text()
@@ -125,11 +125,11 @@ func (p *Parser) parse(filename, content, workDir string) (*Api, error) {
 		var pkg string
 		if imp.Package != nil {
 			pkg = imp.Package.Text()
-			importInfo[pkg] = &ImportInfo{
+			importInfo[pkg] = append(importInfo[pkg], &ImportInfo{
 				Path:      path,
 				Package:   pkg,
 				Structure: nestedApi.typeM,
-			}
+			})
 		}
 
 		err = p.valid(root, nestedApi, pkg)
@@ -322,7 +322,7 @@ func (p *Parser) memberFill(apiList []*Api) *Api {
 }
 
 // checkTypeDeclaration checks whether a struct type has been declared in context
-func (p *Parser) checkTypeDeclaration(apiList []*Api, importInfo map[string]*ImportInfo) error {
+func (p *Parser) checkTypeDeclaration(apiList []*Api, importInfo map[string][]*ImportInfo) error {
 	types := make(map[string]TypeExpr)
 
 	for _, root := range apiList {
@@ -396,7 +396,7 @@ func (p *Parser) checkRequestBody(route *Route, types map[string]TypeExpr, lineP
 	return nil
 }
 
-func (p *Parser) checkTypes(apiItem *Api, linePrefix string, types map[string]TypeExpr, importInfo map[string]*ImportInfo) error {
+func (p *Parser) checkTypes(apiItem *Api, linePrefix string, types map[string]TypeExpr, importInfo map[string][]*ImportInfo) error {
 	for _, each := range apiItem.Type {
 		tp, ok := each.(*TypeStruct)
 		if !ok {
@@ -413,9 +413,21 @@ func (p *Parser) checkTypes(apiItem *Api, linePrefix string, types map[string]Ty
 	return nil
 }
 
-func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr DataType, importInfo map[string]*ImportInfo) error {
+func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr DataType, importInfo map[string][]*ImportInfo) error {
 	if expr == nil {
 		return nil
+	}
+
+	structure := make(map[string]TypeExpr)
+	for _, list := range importInfo {
+		for _, e := range list {
+			for k, v := range e.Structure {
+				if _, ok := structure[k]; ok {
+					return fmt.Errorf("%s line %d:%d duplicate type '%s' in %s", linePrefix, v.NameExpr().Line(), v.NameExpr().Column(), v.NameExpr().Text(), e.Path)
+				}
+				structure[k] = v
+			}
+		}
 	}
 
 	switch v := expr.(type) {
@@ -432,10 +444,14 @@ func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr Da
 				return fmt.Errorf("%s line %d:%d package '%s' is not defined in imports", linePrefix, v.Literal.Line(), v.Literal.Column(), pkg)
 			}
 
-			structure := imp.Structure
+			var list []string
+			for _, e := range imp {
+				list = append(list, strings.ReplaceAll(e.Path, `"`, ""))
+			}
+
 			structName := strings.TrimPrefix(v.Literal.Text(), pkg+".")
 			if _, ok = structure[structName]; !ok {
-				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.Literal.Line(), v.Literal.Column(), structName, imp.Path)
+				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.Literal.Line(), v.Literal.Column(), structName, strings.Join(list, " and "))
 			}
 		} else {
 			_, ok := types[name]
@@ -458,10 +474,13 @@ func (p *Parser) checkType(linePrefix string, types map[string]TypeExpr, expr Da
 				return fmt.Errorf("%s line %d:%d package '%s' is not defined in imports", linePrefix, v.PointerExpr.Line(), v.PointerExpr.Column(), pkg)
 			}
 
-			structure := imp.Structure
+			var list []string
+			for _, e := range imp {
+				list = append(list, strings.ReplaceAll(e.Path, `"`, ""))
+			}
 			structName := v.Name.Text()
 			if _, ok = structure[structName]; !ok {
-				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.PointerExpr.Line(), v.PointerExpr.Column(), structName, imp.Path)
+				return fmt.Errorf("%s line %d:%d can not found declaration '%s' in import '%s'", linePrefix, v.PointerExpr.Line(), v.PointerExpr.Column(), structName, strings.Join(list, " and "))
 			}
 		} else {
 			_, ok := types[name]

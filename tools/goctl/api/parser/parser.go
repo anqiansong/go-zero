@@ -95,23 +95,25 @@ func (p parser) fillImport() error {
 
 			var types []spec.Type
 			if len(pkg) > 0 {
-				info, ok := p.ast.ImportInfo[pkg]
+				list, ok := p.ast.ImportInfo[pkg]
 				if ok {
-					for _, e := range info.Structure {
-						switch v := (e).(type) {
-						case *ast.TypeStruct:
-							var members []spec.Member
-							for _, item := range v.Fields {
-								members = append(members, p.fieldToMember(item))
+					for _, info := range list {
+						for _, e := range info.Structure {
+							switch v := (e).(type) {
+							case *ast.TypeStruct:
+								var members []spec.Member
+								for _, item := range v.Fields {
+									members = append(members, p.fieldToMember(item))
+								}
+								types = append(types, spec.DefineStruct{
+									RawName:  v.Name.Text(),
+									TypeName: v.Name.Text(),
+									Members:  members,
+									Docs:     p.stringExprs(v.Doc()),
+								})
+							default:
+								return fmt.Errorf("unknown type %+v", v)
 							}
-							types = append(types, spec.DefineStruct{
-								RawName:  v.Name.Text(),
-								TypeName: v.Name.Text(),
-								Members:  members,
-								Docs:     p.stringExprs(v.Doc()),
-							})
-						default:
-							return fmt.Errorf("unknown type %+v", v)
 						}
 					}
 				}
