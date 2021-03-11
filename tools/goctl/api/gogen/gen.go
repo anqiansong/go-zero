@@ -59,6 +59,10 @@ func DoGenTypes(apiFile, dir, style string) error {
 		return err
 	}
 
+	if len(api.Imports) > 0 {
+		return errors.New("the reused type structure file is not allowed to import other files")
+	}
+
 	cfg, err := config.NewConfig(style)
 	if err != nil {
 		return err

@@ -101,6 +101,11 @@ func (p *Parser) parse(filename, content, workDir string) (*Api, error) {
 	var apiAstList []*Api
 	importInfo := make(map[string][]*ImportInfo)
 	apiAstList = append(apiAstList, root)
+	dup := make(map[string]PlaceHolder)
+	for k := range root.typeM {
+		dup[k] = Holder
+	}
+
 	for _, imp := range root.Import {
 		path := imp.Value.Text()
 		var abs string
@@ -122,6 +127,11 @@ func (p *Parser) parse(filename, content, workDir string) (*Api, error) {
 			return nil, err
 		}
 
+		for k, v := range nestedApi.typeM {
+			if _, ok := dup[k]; ok {
+				return nil, fmt.Errorf(`%s line %d:%d duplicate type declaration '%s'`, nestedApi.LinePrefix, v.NameExpr().Line(), v.NameExpr().Column(), v.NameExpr().Text())
+			}
+		}
 		var pkg string
 		if imp.Package != nil {
 			pkg = imp.Package.Text()
