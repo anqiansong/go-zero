@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
@@ -22,7 +23,8 @@ package types
 import (
 	"time"
 	{{.import}}
-){{else}}import (
+){{end}}
+{{if .import}}import (
 	{{.import}}
 ){{end}}
 {{.types}}
@@ -45,6 +47,29 @@ func BuildTypes(types []spec.Type) (string, error) {
 	}
 
 	return builder.String(), nil
+}
+
+func onlyGenTypes(filename string, cfg *config.Config, api *spec.ApiSpec) error {
+	val, err := BuildTypes(api.Types)
+	if err != nil {
+		return err
+	}
+
+	ext := filepath.Ext(filename)
+	dir, base := filepath.Split(filename)
+	fn := strings.TrimSuffix(base, ext)
+	typeFilename, err := format.FileNamingFormat(cfg.NamingFormat, fn)
+	if err != nil {
+		return err
+	}
+
+	filename = filepath.Join(dir, typeFilename+".go")
+
+	return util.With("types").Parse(typesTemplate).GoFmt(true).SaveTo(map[string]interface{}{
+		"containsTime": false,
+		"import":       []string{},
+		"types":        val,
+	}, filename, true)
 }
 
 func genTypes(dir string, importMap map[string]string, cfg *config.Config, api *spec.ApiSpec) error {

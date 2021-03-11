@@ -18,6 +18,7 @@ import (
 	apiutil "github.com/tal-tech/go-zero/tools/goctl/api/util"
 	"github.com/tal-tech/go-zero/tools/goctl/config"
 	"github.com/tal-tech/go-zero/tools/goctl/util"
+	"github.com/tal-tech/go-zero/tools/goctl/util/console"
 	"github.com/urfave/cli"
 )
 
@@ -30,6 +31,7 @@ func GoCommand(c *cli.Context) error {
 	apiFile := c.String("api")
 	dir := c.String("dir")
 	namingStyle := c.String("style")
+	onlyType := c.Bool("types")
 
 	if len(apiFile) == 0 {
 		return errors.New("missing -api")
@@ -38,7 +40,43 @@ func GoCommand(c *cli.Context) error {
 		return errors.New("missing -dir")
 	}
 
+	if onlyType {
+		return DoGenTypes(apiFile, dir, namingStyle)
+	}
+
 	return DoGenProject(apiFile, dir, namingStyle)
+}
+
+// DoGenTypes generates golang types from the specified api
+func DoGenTypes(apiFile, dir, style string) error {
+	apiPath, _, err := util.ParseApiParam(apiFile)
+	if err != nil {
+		return err
+	}
+
+	api, err := parser.Parse(apiPath)
+	if err != nil {
+		return err
+	}
+
+	cfg, err := config.NewConfig(style)
+	if err != nil {
+		return err
+	}
+
+	err = util.MkdirIfNotExist(dir)
+	if err != nil {
+		return err
+	}
+
+	filename := filepath.Join(dir, filepath.Base(apiFile))
+	err = onlyGenTypes(filename, cfg, api)
+	c := console.NewColorConsole()
+	if err == nil {
+		c.MarkDone()
+	}
+
+	return err
 }
 
 // DoGenProject gen go project files with api file
